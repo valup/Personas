@@ -2,7 +2,7 @@
 #include <stdlib.h>
 
 typedef struct _GNodo {
-	Persona * persona ;
+	void * dato ;
 	struct _GNodo * sig ;
 } GNodo ;
 
@@ -11,6 +11,10 @@ typedef GNodo * GList ;
 typedef int (* Predicado ) ( void * dato ) ;
 
 typedef void * (* Funcion ) ( void * dato ) ;
+
+typedef void * (* Copia) (void *) ;
+
+typedef void (* Destruir) (void *) ;
 
 typedef struct {
 char * nombre ;
@@ -22,9 +26,18 @@ GList glist_crear() {
   return NULL;
 }
 
-GList glist_agregar_final(GList lista, int dato) {
+GList glist_agregar_final(GList lista, Persona persona ) {
   GNodo *nuevoNodo = malloc(sizeof(GNodo));
-  nuevoNodo->dato = dato;
+  Persona *p = malloc(sizeof(Persona));
+  
+  nuevoNodo->dato = p;
+  
+  nuevoNodo->dato->nombre = malloc(sizeof(char) * 20) ;
+  nuevoNodo->dato->nombre = persona->nombre ;
+  
+  nuevoNodo->dato->lugarDeNacimiento = malloc(sizeof(char) * 42) ;
+  nuevoNodo->dato->lugarDeNacimiento = persona->lugarDeNacimiento ;
+  
   nuevoNodo->sig = NULL;
 
   if (lista == NULL)
@@ -97,12 +110,16 @@ void glist_a_archivo( GList lista ) {
     int i = lista ;
     for(; i->sig != NULL ; i = i->sig ) {
         
+        
+        
 
 int main() {
     Persona * listaP = malloc ( sizeof ( Persona ) * 3000 ) ;
     archivo_a_glist( listaP ) ;
     Persona * filtrada1 = malloc ( sizeof ( Persona ) * 3000 ) , filtrada2 = malloc ( sizeof ( Persona ) * 3000 ) ;
     Persona * map1 = malloc ( sizeof ( Persona ) * 3000 ) , map2 = malloc ( sizeof ( Persona ) * 3000 ) ;
+    
+    filter(listaP,
     
 }
 
