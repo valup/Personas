@@ -65,7 +65,7 @@ int glist_len ( GList lista ) {
 	return j ;
 }
 
-GList filter ( GList lista , Predicado p ) {
+GList filter ( GList lista , Predicado p , GList copia ) {
 	GList filtrada = glist_crear() , i = lista ;
 	for ( ; i->sig != NULL ; i = i->sig ) {
 		if ( p(i->dato) ) {
@@ -78,7 +78,7 @@ GList filter ( GList lista , Predicado p ) {
     return  filtrada ;
 }
 
-GList map ( GList lista, Funcion f ) {
+GList map ( GList lista, Funcion f , GList copia ) {
     GList nueva = glist_crear() , i = lista ;
     for (; i->sig != NULL , i = i->sig ){
         glist_agregar_final( nueva , f( i->dato ) ) ;
