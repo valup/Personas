@@ -17,109 +17,171 @@ typedef void * (* Copia) (void *) ;
 typedef void (* Destruir) (void *) ;
 
 typedef struct {
-char * nombre ;
-int edad ;
-char * lugarDeNacimiento ; // pais o capital
+	char * nombre ;
+	int edad ;
+	char * lugarDeNacimiento ; // pais o capital
 } Persona ;
 
+Copia copiar( GList lista , Persona persona ) {
+	
+}
+
+Destruir destruir( GList listaPersonas ) {
+	
+}
+
+int contarLineas( FILE *archivo ){
+	char* c;
+	int lineas = 0;
+	while( !feof( archivo ) ){ 
+		fscanf( archivo , "%s" , c );
+		lineas++;
+	}
+	rewind( archivo );
+	return lineas;
+}
+
 GList glist_crear() {
-  return NULL;
+	return NULL;
 }
 
-GList glist_agregar_final(GList lista, Persona persona ) {
-  GNodo *nuevoNodo = malloc(sizeof(GNodo));
-  Persona *p = malloc(sizeof(Persona));
-  
-  nuevoNodo->dato = p;
-  
-  nuevoNodo->dato->nombre = malloc(sizeof(char) * 20) ;
-  nuevoNodo->dato->nombre = persona->nombre ;
-  
-  nuevoNodo->dato->lugarDeNacimiento = malloc(sizeof(char) * 42) ;
-  nuevoNodo->dato->lugarDeNacimiento = persona->lugarDeNacimiento ;
-  
-  nuevoNodo->sig = NULL;
-
-  if (lista == NULL)
-    return nuevoNodo;
-
-  GList nodo = lista;
-  for (;nodo->sig != NULL;nodo = nodo->sig);
-
-  nodo->sig = nuevoNodo;
-  return lista;
+GList glist_agregar_final( GList lista , Persona persona ) {
+	GNodo *nuevoNodo = malloc( sizeof( GNodo ) );
+	nuevoNodo->dato = persona;
+	nuevoNodo->sig = NULL;
+	if( lista == NULL ) {
+		return nuevoNodo;
+	}
+	GList nodo = lista;
+	for(; nodo->sig != NULL ; nodo = nodo->sig);
+	nodo->sig = nuevoNodo;
+	return lista;
 }
 
-//GList archivo_a_glist(GList lista){
-  //FILE * archivo;
-  //char * nombreArchivo = malloc(sizeof(char) * );
-  //printf("Ingrese el nombre del archivo con .txt al final:\n");
-  //scanf("%s",nombreArchivo);
-  //archivo=fopen(nombreArchivo, "r");
-  //int i=0;
-  //char c=fgetc(archivo);
-  //while(i<100&&c!=EOF){
-	  //ungetc(c,archivo);
-	  //fgets(listPalabras[i],100,(FILE*)archivo);
-    //listPalabras[i][strlen(listPalabras[i])-1]='\0';
-	  //i++;
-	  //c=fgetc(archivo);
-  //}
-  //fclose(archivo);
-  //return i;
-//}
+Persona string_a_persona( char* string ) {
+	Persona *p = malloc( sizeof( Persona ) );
+	char *nombre , *edad , *lugar;
+	int i = 0;
+	for(; string[i] != "," ; i++ ) {
+		nombre[i] = string[i];
+	}
+	nombre[i] = '\0';
+	p->nombre = nombre;
+	i++;
+	for(; string[i] != "," ; i++ ) {
+		edad[i] = string[i];
+	}
+	edad[i] = '\0';
+	p->edad = atoi(edad);
+	i++;
+	for(; string[i] != '\0' ; i++ ) {
+		lugar[i] = string[i];
+	}
+	lugar[i] = '\0';
+	p->lugarDeNacimiento = lugar;
+	return p;
+}
 
-int glist_len ( GList lista ) {
+void archivo_a_glist( GList lista , FILE *archivo ){
+	int i=0;
+	for( !feof( archivo ) ) {
+		char* persona;
+		fscanf( archivo , "%s" , persona );
+		glist_agregar_final( lista , string_a_persona( persona ) );
+	}
+	fclose( archivo );
+}
+
+void persona_a_archivo( Persona persona , FILE *archivo ) {
+	fputs( persona->nombre , archivo );
+	fputs( "," , archivo );
+	fputs( persona->edad , archivo );
+	fputs( "," , archivo );
+	fputs( persona->lugarDeNacimiento , archivo );
+	fputs( "\n" , archivo );
+}
+
+void glist_a_archivo( GList lista , char* tipo ) {
+    FILE *salida ;
+    char *nombre ;
+    printf( "Ingrese el nombre del archivo donde guardar la lista %s: " , tipo ) ;
+    scanf( "%s" , &nombre ) ;
+    salida = fopen( strcat( nombre , ".txt" ) , "w" ) ;
+    GList i = lista ;
+    for(; i->sig != NULL ; i = i->sig ) {
+		persona_a_archivo( i->dato , salida );
+	}
+	persona_a_archivo( i->dato , salida );
+}
+
+int glist_len( GList lista ) {
 	GList i = lista ;
 	int j = 0 ;
-	for ( ; i->sig != NULL ; i = i->sig ) {
+	for( ; i->sig != NULL ; i = i->sig ) {
 		j++ ;
 	}
 	return j ;
 }
 
-GList filter ( GList lista , Predicado p , GList copia ) {
+GList filter( GList lista , Predicado p , Copia c ) {
 	GList filtrada = glist_crear() , i = lista ;
-	for ( ; i->sig != NULL ; i = i->sig ) {
-		if ( p(i->dato) ) {
-			glist_agregar_final( filtrada , i->dato ) ;
+	for( ; i->sig != NULL ; i = i->sig ) {
+		if( p( i->dato ) ) {
+			c( filtrada , i->dato ) ;
 		}
 	}
-    if ( p(i->dato) ) {
-        glist_agregar_final( filtrada , i->dato ) ;
+    if( p(i->dato) ) {
+        c( filtrada , i->dato ) ;
     }
     return  filtrada ;
 }
 
-GList map ( GList lista, Funcion f , GList copia ) {
+GList map( GList lista, Funcion f , Copia c ) {
     GList nueva = glist_crear() , i = lista ;
-    for (; i->sig != NULL , i = i->sig ){
-        glist_agregar_final( nueva , f( i->dato ) ) ;
+    for(; i->sig != NULL , i = i->sig ){
+        c( nueva , f( i->dato ) ) ;
     }
-    glist_agregar_final( nueva , f( i->dato ) ) ;
+    c( nueva , f( i->dato ) ) ;
     return nueva ;
 }
-
-void glist_a_archivo( GList lista ) {
-    FILE * salida ;
-    char * nombre ;
-    printf( "Ingrese el nombre del archivo donde guardar la lista: " ) ;
-    scanf( "%s" , &nombre ) ;
-    //comprobar que existe
-    salida = fopen( strcat( nombre , ".txt" ) , "w" ) ;
-    int i = lista ;
-    for(; i->sig != NULL ; i = i->sig ) {
-        
-        
-        
-
+		
 int main() {
-    Persona * listaP = malloc ( sizeof ( Persona ) * 3000 ) ;
-    archivo_a_glist( listaP ) ;
-    Persona * filtrada1 = malloc ( sizeof ( Persona ) * 3000 ) , filtrada2 = malloc ( sizeof ( Persona ) * 3000 ) ;
-    Persona * map1 = malloc ( sizeof ( Persona ) * 3000 ) , map2 = malloc ( sizeof ( Persona ) * 3000 ) ;
-    
-    filter(listaP,
-    
+	FILE* archivo;
+	char* nombre;
+	
+	printf( "Ingrese el nombre del archivo que contiene la lista de personas: " );
+	scanf( "%s" , &nombre );
+	printf( "Nombre: %s" , nombre );
+	
+	if( archivo = fopen( strcat(nombre,".txt") , "r" ) ) {
+		int lineas = contarLineas( archivo );
+		Persona * listaP = malloc( sizeof( Persona ) * lineas ) ;
+		
+		archivo_a_glist( listaP , archivo ) ;
+		
+		Persona * filtrada1 = malloc( sizeof( Persona ) * lineas ) , filtrada2 = malloc( sizeof( Persona ) * lineas ) ;
+		Persona * map1 = malloc( sizeof( Persona ) * lineas ) , map2 = malloc( sizeof( Persona ) * lineas ) ;
+		
+		filtrada1 = filter( listaP , predicado1 , copiar );
+		glist_a_archivo( filtrada1 , "filtrada 1" );
+		destruir( fitrada1 );
+		
+		filtrada2 = filter( listaP , predicado2 , copiar );
+		glist_a_archivo( filtrada2 , "filtrada 2" );
+		destruir( fitrada2 );
+		
+		map1 = map( listaP , funcion1 , copiar );
+		glist_a_archivo( map1 , "map 1" );
+		destruir( map1 );
+		
+		map2 = map( listaP , funcion2 , copiar );
+		glist_a_archivo( map2 , "map 2" );
+		destruir( map2 );
+		
+		destruir( listaP );
+	}
+	else{
+		printf( "Error: el archivo no existe.\n" );
+	}
+    return 0;
 }
-
