@@ -27,7 +27,17 @@ Copia copiar( GList lista , Persona persona ) {
 }
 
 Destruir destruir( GList listaPersonas ) {
+	GList i = listaPersonas;
+	for(; i->sig != NULL ; i = i->sig ) {
+		free( i->dato->nombre );
+		free( i->dato->lugarDeNacimiento );
+		free( i->dato );
+	}
+	free( i->dato->nombre );
+	free( i->dato->lugarDeNacimiento );
+	free( i->dato );
 	
+	free( listaPersonas );
 }
 
 int contarLineas( FILE *archivo ){
@@ -144,40 +154,40 @@ GList map( GList lista, Funcion f , Copia c ) {
     c( nueva , f( i->dato ) ) ;
     return nueva ;
 }
-		
+
 int main() {
 	FILE* archivo;
 	char* nombre;
-	
+
 	printf( "Ingrese el nombre del archivo que contiene la lista de personas: " );
 	scanf( "%s" , &nombre );
 	printf( "Nombre: %s" , nombre );
-	
-	if( archivo = fopen( strcat(nombre,".txt") , "r" ) ) {
+
+	if( archivo = fopen( strcat( nombre , ".txt" )  ,  "r"  ) ) {
 		int lineas = contarLineas( archivo );
 		Persona * listaP = malloc( sizeof( Persona ) * lineas ) ;
-		
+
 		archivo_a_glist( listaP , archivo ) ;
-		
+
 		Persona * filtrada1 = malloc( sizeof( Persona ) * lineas ) , filtrada2 = malloc( sizeof( Persona ) * lineas ) ;
 		Persona * map1 = malloc( sizeof( Persona ) * lineas ) , map2 = malloc( sizeof( Persona ) * lineas ) ;
-		
+
 		filtrada1 = filter( listaP , predicado1 , copiar );
 		glist_a_archivo( filtrada1 , "filtrada 1" );
 		destruir( fitrada1 );
-		
+
 		filtrada2 = filter( listaP , predicado2 , copiar );
 		glist_a_archivo( filtrada2 , "filtrada 2" );
 		destruir( fitrada2 );
-		
+
 		map1 = map( listaP , funcion1 , copiar );
 		glist_a_archivo( map1 , "map 1" );
 		destruir( map1 );
-		
+
 		map2 = map( listaP , funcion2 , copiar );
 		glist_a_archivo( map2 , "map 2" );
 		destruir( map2 );
-		
+
 		destruir( listaP );
 	}
 	else{
