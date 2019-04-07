@@ -22,29 +22,29 @@ typedef struct {
 	char * lugarDeNacimiento ; // pais o capital
 } Persona ;
 
-Copia copiar( GList lista , Persona persona ) {
+Copia copiar( GList lista , Persona *persona ) {
 	
 }
 
 Destruir destruir( GList listaPersonas ) {
 	GList i = listaPersonas;
 	for(; i->sig != NULL ; i = i->sig ) {
-		free( i->dato->nombre );
-		free( i->dato->lugarDeNacimiento );
-		free( i->dato );
+		free( i->persona->nombre );
+		free( i->persona->lugarDeNacimiento );
+		free( i->persona );
 	}
-	free( i->dato->nombre );
-	free( i->dato->lugarDeNacimiento );
-	free( i->dato );
+	free( i->persona->nombre );
+	free( i->persona->lugarDeNacimiento );
+	free( i->persona );
 	
 	free( listaPersonas );
 }
 
 int contarLineas( FILE *archivo ){
-	char* c;
+	char* l;
 	int lineas = 0;
-	while( !feof( archivo ) ){ 
-		fscanf( archivo , "%s" , c );
+	while( !feof( archivo ) ){
+		fscanf( archivo , "%s" , l );
 		lineas++;
 	}
 	rewind( archivo );
@@ -55,7 +55,7 @@ GList glist_crear() {
 	return NULL;
 }
 
-GList glist_agregar_final( GList lista , Persona persona ) {
+GList glist_agregar_final( GList lista , Persona *persona ) {
 	GNodo *nuevoNodo = malloc( sizeof( GNodo ) );
 	nuevoNodo->dato = persona;
 	nuevoNodo->sig = NULL;
@@ -72,23 +72,27 @@ Persona string_a_persona( char* string ) {
 	Persona *p = malloc( sizeof( Persona ) );
 	char *nombre , *edad , *lugar;
 	int i = 0;
-	for(; string[i] != "," ; i++ ) {
+	
+	for(; string[i] != ',' ; i++ ) {
 		nombre[i] = string[i];
 	}
 	nombre[i] = '\0';
 	p->nombre = nombre;
 	i++;
-	for(; string[i] != "," ; i++ ) {
+	
+	for(; string[i] != ',' ; i++ ) {
 		edad[i] = string[i];
 	}
 	edad[i] = '\0';
 	p->edad = atoi(edad);
 	i++;
+	
 	for(; string[i] != '\0' ; i++ ) {
 		lugar[i] = string[i];
 	}
 	lugar[i] = '\0';
 	p->lugarDeNacimiento = lugar;
+	
 	return p;
 }
 
@@ -102,13 +106,13 @@ void archivo_a_glist( GList lista , FILE *archivo ){
 	fclose( archivo );
 }
 
-void persona_a_archivo( Persona persona , FILE *archivo ) {
+void persona_a_archivo( Persona *persona , FILE *archivo ) {
 	fputs( persona->nombre , archivo );
-	fputs( "," , archivo );
+	fputc( ',' , archivo );
 	fputs( persona->edad , archivo );
-	fputs( "," , archivo );
+	fputc( ',' , archivo );
 	fputs( persona->lugarDeNacimiento , archivo );
-	fputs( "\n" , archivo );
+	fputc( '\n' , archivo );
 }
 
 void glist_a_archivo( GList lista , char* tipo ) {
@@ -149,10 +153,26 @@ GList filter( GList lista , Predicado p , Copia c ) {
 GList map( GList lista, Funcion f , Copia c ) {
     GList nueva = glist_crear() , i = lista ;
     for(; i->sig != NULL , i = i->sig ){
-        c( nueva , f( i->dato ) ) ;
+		f( i->dato );
+        c( nueva , i->dato ) ;
     }
-    c( nueva , f( i->dato ) ) ;
+    f( i->dato );
+    c( nueva , i->dato ) ;
     return nueva ;
+}
+
+Predicado menor( Persona *persona ) {
+	return ( persona->edad < 18 );
+}
+
+Predicado inicial_A( Persona *persona ) {
+	return ( persona->nombre[0] = 'A' );
+}
+
+Funcion doble( Persona *persona ) {
+	int i = persona->edad;
+	persona->edad = i * 2;
+	return
 }
 
 int main() {
@@ -169,14 +189,14 @@ int main() {
 
 		archivo_a_glist( listaP , archivo ) ;
 
-		Persona * filtrada1 = malloc( sizeof( Persona ) * lineas ) , filtrada2 = malloc( sizeof( Persona ) * lineas ) ;
-		Persona * map1 = malloc( sizeof( Persona ) * lineas ) , map2 = malloc( sizeof( Persona ) * lineas ) ;
+		Persona *filtrada1 = malloc( sizeof( Persona ) * lineas ) , *filtrada2 = malloc( sizeof( Persona ) * lineas ) ;
+		Persona *map1 = malloc( sizeof( Persona ) * lineas ) , *map2 = malloc( sizeof( Persona ) * lineas ) ;
 
-		filtrada1 = filter( listaP , predicado1 , copiar );
+		filtrada1 = filter( listaP , menor , copiar );
 		glist_a_archivo( filtrada1 , "filtrada 1" );
 		destruir( fitrada1 );
 
-		filtrada2 = filter( listaP , predicado2 , copiar );
+		filtrada2 = filter( listaP , inicial_A , copiar );
 		glist_a_archivo( filtrada2 , "filtrada 2" );
 		destruir( fitrada2 );
 
@@ -193,5 +213,5 @@ int main() {
 	else{
 		printf( "Error: el archivo no existe.\n" );
 	}
-    return 0;
+	return 0
 }
