@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
+#include <assert.h>
 
 typedef struct {
 char *nombre;
@@ -10,78 +11,61 @@ char *lugarDeNacimiento; // pais o capital
 } Persona;
 
 typedef struct _GNodo {
-  Persona *persona;
+  Persona *dato;
   struct _GNodo *sig;
 } GNodo;
 
 typedef GNodo *GList;
 
-typedef struct _SNodo {
-  void *dato;
-  struct _SNodo *sig;
-} SNodo;
-
-typedef SNodo *SList;
-
 GList glist_crear() {
 	return NULL;
 }
 
-GList glist_agregar_final( GList lista , Persona *persona ) {
-	GNodo *nuevoNodo = malloc( sizeof( GNodo ) );
-	nuevoNodo->persona = persona;
-	nuevoNodo->sig = NULL;
-	if( lista == NULL ) {
-		return nuevoNodo;
-	}
-	GList nodo = lista;
-	for(; nodo->sig != NULL ; nodo = nodo->sig);
-	nodo->sig = nuevoNodo;
-	return lista;
+GList glist_agregar_inicio(GList lista, void *dato) {
+  GNodo *nuevoNodo = malloc(sizeof(GNodo));
+  nuevoNodo->dato = dato;
+  nuevoNodo->sig = lista;
+  return nuevoNodo;
 }
 
-SList slist_crear() {
-	return NULL;
+void glist_imprimir(GList lista) {
+  for (GNodo *nodo = lista; nodo != NULL; nodo = nodo->sig)
+    printf("%s\n",(char *)nodo->dato);
 }
 
-SList slist_agregar_final( SList lista , char* string ) {
-	SNodo *nuevoNodo = malloc( sizeof( SNodo ) );
-	nuevoNodo->dato = string;
-	nuevoNodo->sig = NULL;
-	if( lista == NULL ) {
-		return nuevoNodo;
-	}
-	SList nodo = lista;
-	for(; nodo->sig != NULL ; nodo = nodo->sig);
-	nodo->sig = nuevoNodo;
-	return lista;
-}
-
-int archivo_a_slist( SList lista , char *nombre ) {
-	int i = 0;
+GList archivo_a_glist( GList lista , char *nombre , int *cant ) {
+	int i = 0 , longMax = 50;
 	FILE *archivo;
 	archivo = fopen( nombre , "r" );
 	while( !feof( archivo ) ) {
-		char *s = malloc( sizeof( char ) * 20 );
-		fscanf( archivo , "%s" , s );
-		lista = slist_agregar_final( lista , s );
+		char *s = malloc( sizeof( char ) * longMax );
+		fgets( s , longMax , archivo );
+		if( strlen( s ) > 1 ) {
+			s[ strlen( s ) - 1 ] = '\0';
+			if( s[ strlen( s ) - 1 ] == '\r' ) {
+				s[ strlen( s ) - 1 ] = '\0';
+			}
+		}
+		lista = glist_agregar_inicio( lista , s );
 		i++;
 	}
-	return i;
+	*cant = i;
+	glist_imprimir(lista);
+	return lista;
 }
 
-char* elegir( SList opciones , int cant ) {
+void* elegir( GList opciones , int cant ) {
 	int i = 0 , pos = rand() % cant;
-	SList l = opciones;
+	GList l = opciones;
 	for(; i < pos ; i++ ) {
-		printf( "elegir-for\n" );
+		assert(l != NULL);
 		l = l->sig;
-		printf( "l-sig\n" );
 	}
+	assert(l != NULL);
 	return l->dato;
 }
 
-Persona* persona_random( SList nombres , int cantN , SList lugares , int cantL ) {
+Persona* persona_random( GList nombres , int cantN , GList lugares , int cantL ) {
 	Persona *persona = malloc( sizeof( Persona ) );
 	persona->nombre = elegir( nombres , cantN );
 	persona->edad = ( rand() % 100 ) + 1;
@@ -90,11 +74,12 @@ Persona* persona_random( SList nombres , int cantN , SList lugares , int cantL )
 }
 	
 
-void lista_personas( GList lista , SList nombres , int cantN , SList lugares , int cantL ) {
+GList lista_personas( GList lista , GList nombres , int cantN , GList lugares , int cantL ) {
 	int i = 0 , cant = ( rand() %  8001 ) + 2000;
 	for(; i < cant ; i++ ) {
-		lista = glist_agregar_final( lista , persona_random( nombres , cantN , lugares , cantL ) );
+		lista = glist_agregar_inicio( lista , (void *)persona_random( nombres , cantN , lugares , cantL ) );
 	}
+	return lista;
 }
 
 void persona_a_archivo( Persona *persona , FILE *archivo ) {
@@ -114,21 +99,21 @@ void glist_a_archivo( GList lista ) {
     salida = fopen( strcat( nombre , ".txt" ) , "w" ) ;
     GList i = lista ;
     for(; i->sig != NULL ; i = i->sig ) {
-		persona_a_archivo( i->persona , salida );
+		persona_a_archivo( i->dato , salida );
 	}
-	persona_a_archivo( i->persona , salida );
+	persona_a_archivo( i->dato , salida );
 }
 
 int main() {
-	SList nombres = slist_crear() , lugares = slist_crear();
-	GList personas = glist_crear();
+	GList nombres = glist_crear() , lugares = glist_crear() , personas = glist_crear();
 	int cantN , cantL;
-	cantN = archivo_a_slist( nombres , "nombres.txt" );
-	cantL = archivo_a_slist( lugares , "paises.txt" );
+	nombres = archivo_a_glist( nombres , "nombres.txt" , &cantN );
+	lugares = archivo_a_glist( lugares , "paises.txt" , &cantL );
+	printf("%d, %d\n" , cantN , cantL );
+	//assert(NULL);
 	
-	lista_personas( personas , nombres , cantN , lugares , cantL );
+	personas = lista_personas( personas , nombres , cantN , lugares , cantL );
 	
-	printf( "a archivo\n" );
 	glist_a_archivo( personas );
 	
 	return 0;
