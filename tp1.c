@@ -46,16 +46,16 @@ void destruir( GList listaPersonas ) {
 	return;
 }
 
-int contarLineas( FILE *archivo ){
-	char* l;
-	int lineas = 0;
-	while( !feof( archivo ) ){
-		fscanf( archivo , "%s" , l );
-		lineas++;
-	}
-	rewind( archivo );
-	return lineas;
-}
+//int contarLineas( FILE *archivo ){
+	//char* l;
+	//int lineas = 0;
+	//while( !feof( archivo ) ){
+		//fscanf( archivo , "%s" , l );
+		//lineas++;
+	//}
+	//rewind( archivo );
+	//return lineas;
+//}
 
 GList glist_crear() {
 	return NULL;
@@ -70,7 +70,7 @@ GList glist_agregar_inicio(GList lista, void *dato) {
 
 Persona * string_a_persona( char* string ) {
 	Persona *p = malloc( sizeof( Persona ) );
-	char *nombre , *edad , *lugar;
+	char *nombre = "" , *edad = "" , *lugar = "";
 	int i = 0;
 	
 	for(; string[i] != ',' ; i++ ) {
@@ -179,7 +179,7 @@ void * doble( void * persona ) {
 
 int main() {
 	FILE* archivo;
-	char* nombre;
+	char* nombre = "";
 
 	printf( "Ingrese el nombre del archivo que contiene la lista de personas: " );
 	scanf( "%s" , nombre );
