@@ -1,5 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
+#include <string.h>
+#include <assert.h>
 
 typedef struct _GNodo {
 	void * dato ;
@@ -22,22 +25,25 @@ typedef struct {
 	char * lugarDeNacimiento ; // pais o capital
 } Persona ;
 
-Copia copiar( GList lista , Persona *persona ) {
-	
+void * copiar( void * persona ) {
+	return persona;
 }
 
-Destruir destruir( GList listaPersonas ) {
+void destruirP ( void *persona ) {
+	Persona * aux = (Persona *) persona;
+	free( aux->nombre );
+	free( aux->lugarDeNacimiento );
+	free( aux );
+}
+	
+void destruir( GList listaPersonas ) {
 	GList i = listaPersonas;
 	for(; i->sig != NULL ; i = i->sig ) {
-		free( i->persona->nombre );
-		free( i->persona->lugarDeNacimiento );
-		free( i->persona );
+		destruirP( (void *) i->dato );
 	}
-	free( i->persona->nombre );
-	free( i->persona->lugarDeNacimiento );
-	free( i->persona );
-	
+	destruirP( (void *) i->dato );
 	free( listaPersonas );
+	return;
 }
 
 int contarLineas( FILE *archivo ){
@@ -55,20 +61,14 @@ GList glist_crear() {
 	return NULL;
 }
 
-GList glist_agregar_final( GList lista , Persona *persona ) {
-	GNodo *nuevoNodo = malloc( sizeof( GNodo ) );
-	nuevoNodo->dato = persona;
-	nuevoNodo->sig = NULL;
-	if( lista == NULL ) {
-		return nuevoNodo;
-	}
-	GList nodo = lista;
-	for(; nodo->sig != NULL ; nodo = nodo->sig);
-	nodo->sig = nuevoNodo;
-	return lista;
+GList glist_agregar_inicio(GList lista, void *dato) {
+  GNodo *nuevoNodo = malloc(sizeof(GNodo));
+  nuevoNodo->dato = dato;
+  nuevoNodo->sig = lista;
+  return nuevoNodo;
 }
 
-Persona string_a_persona( char* string ) {
+Persona * string_a_persona( char* string ) {
 	Persona *p = malloc( sizeof( Persona ) );
 	char *nombre , *edad , *lugar;
 	int i = 0;
@@ -96,12 +96,13 @@ Persona string_a_persona( char* string ) {
 	return p;
 }
 
-void archivo_a_glist( GList lista , FILE *archivo ){
-	int i=0;
-	for( !feof( archivo ) ) {
-		char* persona;
-		fscanf( archivo , "%s" , persona );
-		glist_agregar_final( lista , string_a_persona( persona ) );
+void archivo_a_glist( GList lista , FILE *archivo ) {
+	int longMax = 65;
+	while( !feof( archivo ) ) {
+		char* persona = "";
+		fgets( persona , longMax , archivo );
+		persona[ strlen( persona ) - 1 ] = '\0';
+		glist_agregar_inicio( lista , (void *) string_a_persona( persona ) );
 	}
 	fclose( archivo );
 }
@@ -109,7 +110,7 @@ void archivo_a_glist( GList lista , FILE *archivo ){
 void persona_a_archivo( Persona *persona , FILE *archivo ) {
 	fputs( persona->nombre , archivo );
 	fputc( ',' , archivo );
-	fputs( persona->edad , archivo );
+	fputs( itoa( persona->edad ) , archivo );
 	fputc( ',' , archivo );
 	fputs( persona->lugarDeNacimiento , archivo );
 	fputc( '\n' , archivo );
@@ -117,9 +118,9 @@ void persona_a_archivo( Persona *persona , FILE *archivo ) {
 
 void glist_a_archivo( GList lista , char* tipo ) {
     FILE *salida ;
-    char *nombre ;
+    char *nombre = "" ;
     printf( "Ingrese el nombre del archivo donde guardar la lista %s: " , tipo ) ;
-    scanf( "%s" , &nombre ) ;
+    scanf( "%s" , nombre ) ;
     salida = fopen( strcat( nombre , ".txt" ) , "w" ) ;
     GList i = lista ;
     for(; i->sig != NULL ; i = i->sig ) {
@@ -141,38 +142,39 @@ GList filter( GList lista , Predicado p , Copia c ) {
 	GList filtrada = glist_crear() , i = lista ;
 	for( ; i->sig != NULL ; i = i->sig ) {
 		if( p( i->dato ) ) {
-			c( filtrada , i->dato ) ;
+			c( i->dato ) ;
 		}
 	}
     if( p(i->dato) ) {
-        c( filtrada , i->dato ) ;
+        c( i->dato ) ;
     }
     return  filtrada ;
 }
 
 GList map( GList lista, Funcion f , Copia c ) {
     GList nueva = glist_crear() , i = lista ;
-    for(; i->sig != NULL , i = i->sig ){
-		f( i->dato );
-        c( nueva , i->dato ) ;
+    for(; i->sig != NULL ; i = i->sig ){
+		f( (void *) i->dato );
+        c( (void *) i->dato ) ;
     }
     f( i->dato );
-    c( nueva , i->dato ) ;
+    c( i->dato ) ;
     return nueva ;
 }
 
-Predicado menor( Persona *persona ) {
-	return ( persona->edad < 18 );
+int menor( void * persona ) {
+	return ((Persona *) persona)->edad < 18;
 }
 
-Predicado inicial_A( Persona *persona ) {
-	return ( persona->nombre[0] = 'A' );
+int inicial_A( void * persona ) {
+	return ((Persona *) persona)->nombre[0] = 'A';
 }
 
-Funcion doble( Persona *persona ) {
-	int i = persona->edad;
-	persona->edad = i * 2;
-	return
+void * doble( void * persona ) {
+	Persona * aux = (Persona *) persona;
+	int i = aux->edad;
+	aux->edad = i * 2;
+	return aux;
 }
 
 int main() {
@@ -180,31 +182,28 @@ int main() {
 	char* nombre;
 
 	printf( "Ingrese el nombre del archivo que contiene la lista de personas: " );
-	scanf( "%s" , &nombre );
+	scanf( "%s" , nombre );
 	printf( "Nombre: %s" , nombre );
 
-	if( archivo = fopen( strcat( nombre , ".txt" )  ,  "r"  ) ) {
-		int lineas = contarLineas( archivo );
-		Persona * listaP = malloc( sizeof( Persona ) * lineas ) ;
+	if( (archivo = fopen( strcat( nombre , ".txt" )  ,  "r"  )) ) {
+		//int lineas = contarLineas( archivo );
+		GList listaP = glist_crear() , filtrada1 = glist_crear() , filtrada2 = glist_crear() , map1 = glist_crear() , map2 = glist_crear();
 
 		archivo_a_glist( listaP , archivo ) ;
 
-		Persona *filtrada1 = malloc( sizeof( Persona ) * lineas ) , *filtrada2 = malloc( sizeof( Persona ) * lineas ) ;
-		Persona *map1 = malloc( sizeof( Persona ) * lineas ) , *map2 = malloc( sizeof( Persona ) * lineas ) ;
-
 		filtrada1 = filter( listaP , menor , copiar );
 		glist_a_archivo( filtrada1 , "filtrada 1" );
-		destruir( fitrada1 );
+		destruir( filtrada1 );
 
 		filtrada2 = filter( listaP , inicial_A , copiar );
 		glist_a_archivo( filtrada2 , "filtrada 2" );
-		destruir( fitrada2 );
+		destruir( filtrada2 );
 
-		map1 = map( listaP , funcion1 , copiar );
+		map1 = map( listaP , doble , copiar );
 		glist_a_archivo( map1 , "map 1" );
 		destruir( map1 );
 
-		map2 = map( listaP , funcion2 , copiar );
+		map2 = map( listaP , doble , copiar );
 		glist_a_archivo( map2 , "map 2" );
 		destruir( map2 );
 
@@ -213,5 +212,5 @@ int main() {
 	else{
 		printf( "Error: el archivo no existe.\n" );
 	}
-	return 0
+	return 0;
 }
