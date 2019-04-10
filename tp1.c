@@ -25,6 +25,10 @@ typedef struct {
 	char * lugarDeNacimiento ; // pais o capital
 } Persona ;
 
+//copiar: void * -> void *
+//Recibe un puntero a una persona (pero lo recibe como puntero a void) y copia los datos guardados en la estructura de persona
+//en una nueva direccion
+//Luego devuelve esta nueva direccion a persona como puntero a void
 void * copiar( void * persona ) {
 	int maxN = 15, maxL = 45, edad;
 	Persona *aux = (Persona *) persona , *copia = malloc( sizeof( Persona ) );
@@ -38,6 +42,8 @@ void * copiar( void * persona ) {
 	return (void *) copia;
 }
 
+//destruirP: void * -> void
+//Recibe un puntero a una persona (como puntero a void) y libera primero los datos que guarda y luego la persona en si
 void destruirP ( void *persona ) {
 	Persona * aux = (Persona *) persona;
 	free( aux->nombre );
@@ -45,14 +51,21 @@ void destruirP ( void *persona ) {
 	free( aux );
 }
 
+//destruir: GList-> void
+//Recibe una lista de personas y llama a un destruirP para cada una para liberarlas
+//Luego libera la lista
 void destruir( GList listaPersonas ) {
-	for (GNodo *nodo = listaPersonas; nodo != NULL; nodo = nodo->sig) {
+	for (GNodo *nodo = listaPersonas; nodo != NULL;) {
+		GNodo *temp = nodo;
 		destruirP( (void *) nodo->dato );
+		nodo = nodo->sig;
+		free(temp);
 	}
-	free( listaPersonas );
 	return;
 }
 
+//glist_imprimir: GList -> void
+//Recibe una lista de personas e imprime los datos que contiene cada una de ellas
 void glist_imprimir(GList lista) {
 	for (GNodo *nodo = lista; nodo != NULL; nodo = nodo->sig) {
 		Persona *aux = (Persona *) nodo->dato;
@@ -62,12 +75,18 @@ void glist_imprimir(GList lista) {
   }
 }
 
+//imprimir_persona: Persona * -> void
+//Recibe un puntero a persona e imprime cada dato contenido en la estructura
 //void imprimir_persona(Persona *persona) {
 	//printf("%s\n",persona->nombre);
 	//printf("%d\n",persona->edad);
 	//printf("%s\n",persona->lugarDeNacimiento);
 //}
 
+
+//contarLineas: FILE * -> int
+//Recibe un puntero a un archivo abierto y recorre el archivo contando la cantidad de lineas
+//Luego devuelve el resultado
 //int contarLineas( FILE *archivo ){
 	//char* l;
 	//int lineas = 0;
