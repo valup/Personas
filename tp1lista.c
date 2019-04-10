@@ -50,7 +50,7 @@ GList archivo_a_glist( GList lista , char *nombre , int *cant ) {
 		i++;
 	}
 	*cant = i;
-	glist_imprimir(lista);
+	//glist_imprimir(lista);
 	return lista;
 }
 
@@ -109,8 +109,6 @@ int main() {
 	int cantN , cantL;
 	nombres = archivo_a_glist( nombres , "nombres.txt" , &cantN );
 	lugares = archivo_a_glist( lugares , "paises.txt" , &cantL );
-	printf("%d, %d\n" , cantN , cantL );
-	//assert(NULL);
 	
 	personas = lista_personas( personas , nombres , cantN , lugares , cantL );
 	
