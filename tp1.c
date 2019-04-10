@@ -26,7 +26,16 @@ typedef struct {
 } Persona ;
 
 void * copiar( void * persona ) {
-	return persona;
+	int maxN = 15, maxL = 45, edad;
+	Persona *aux = (Persona *) persona , *copia = malloc( sizeof( Persona ) );
+	char *nombre = malloc( sizeof( char ) * maxN ), *lugar = malloc( sizeof( char ) * maxL );
+	strcpy(nombre,aux->nombre);
+	edad = aux->edad;
+	strcpy(lugar,aux->lugarDeNacimiento);
+	copia->nombre = nombre;
+	copia->edad = edad;
+	copia->lugarDeNacimiento = lugar;
+	return (void *) copia;
 }
 
 void destruirP ( void *persona ) {
@@ -35,16 +44,29 @@ void destruirP ( void *persona ) {
 	free( aux->lugarDeNacimiento );
 	free( aux );
 }
-	
+
 void destruir( GList listaPersonas ) {
-	GList i = listaPersonas;
-	for(; i->sig != NULL ; i = i->sig ) {
-		destruirP( (void *) i->dato );
+	for (GNodo *nodo = listaPersonas; nodo != NULL; nodo = nodo->sig) {
+		destruirP( (void *) nodo->dato );
 	}
-	destruirP( (void *) i->dato );
 	free( listaPersonas );
 	return;
 }
+
+void glist_imprimir(GList lista) {
+	for (GNodo *nodo = lista; nodo != NULL; nodo = nodo->sig) {
+		Persona *aux = (Persona *) nodo->dato;
+		printf("%s\n",aux->nombre);
+		printf("%d\n",aux->edad);
+		printf("%s\n",aux->lugarDeNacimiento);
+  }
+}
+
+//void imprimir_persona(Persona *persona) {
+	//printf("%s\n",persona->nombre);
+	//printf("%d\n",persona->edad);
+	//printf("%s\n",persona->lugarDeNacimiento);
+//}
 
 //int contarLineas( FILE *archivo ){
 	//char* l;
@@ -70,63 +92,73 @@ GList glist_agregar_inicio(GList lista, void *dato) {
 
 Persona * string_a_persona( char* string ) {
 	Persona *p = malloc( sizeof( Persona ) );
-	char *nombre = "" , *edad = "" , *lugar = "";
-	int i = 0;
+	int i = 0 ,j=0, maxN = 15 , maxE = 4 , maxL = 45;
+	char *nombre = malloc( sizeof( char ) * maxN ) , *edad = malloc( sizeof( char ) * maxE ) , *lugar = malloc( sizeof( char ) * maxL );
 	
-	for(; string[i] != ',' ; i++ ) {
-		nombre[i] = string[i];
+	for(; string[i] != ',' ; i++,j++) {
+		nombre[j] = string[i];
 	}
-	nombre[i] = '\0';
+	nombre[j] = '\0';
 	p->nombre = nombre;
+	//printf("%s\n",p->nombre);
 	i++;
 	
-	for(; string[i] != ',' ; i++ ) {
-		edad[i] = string[i];
+	for(j=0; string[i] != ',' ; i++,j++) {
+		edad[j] = string[i];
 	}
-	edad[i] = '\0';
+	edad[j] = '\0';
 	p->edad = atoi(edad);
+	//printf("%d\n",p->edad);
 	i++;
 	
-	for(; string[i] != '\0' ; i++ ) {
-		lugar[i] = string[i];
+	for(j=0; string[i] != '\0' ; i++,j++) {
+		lugar[j] = string[i];
 	}
-	lugar[i] = '\0';
+	lugar[j] = '\0';
 	p->lugarDeNacimiento = lugar;
+	//printf("%s\n",p->lugarDeNacimiento);
+	
+	free(edad);
 	
 	return p;
 }
 
-void archivo_a_glist( GList lista , FILE *archivo ) {
+GList archivo_a_glist( GList lista , FILE *archivo ) {
 	int longMax = 65;
 	while( !feof( archivo ) ) {
-		char* persona = "";
-		fgets( persona , longMax , archivo );
-		persona[ strlen( persona ) - 1 ] = '\0';
-		glist_agregar_inicio( lista , (void *) string_a_persona( persona ) );
+		char* persona = malloc( sizeof( char ) * longMax );
+		if (fgets( persona , longMax , archivo) != NULL) {
+			if( persona[ strlen( persona ) - 1 ] == '\n' ) {
+				persona[ strlen( persona ) - 1 ] = '\0';
+			}
+			lista = glist_agregar_inicio( lista , (void *) string_a_persona( persona ) );
+		}
+		free(persona);
 	}
 	fclose( archivo );
+	return lista;
 }
 
 void persona_a_archivo( Persona *persona , FILE *archivo ) {
 	fputs( persona->nombre , archivo );
 	fputc( ',' , archivo );
-	fputs( itoa( persona->edad ) , archivo );
+	fprintf( archivo , "%d" , persona->edad );
 	fputc( ',' , archivo );
 	fputs( persona->lugarDeNacimiento , archivo );
 	fputc( '\n' , archivo );
 }
 
 void glist_a_archivo( GList lista , char* tipo ) {
-    FILE *salida ;
-    char *nombre = "" ;
-    printf( "Ingrese el nombre del archivo donde guardar la lista %s: " , tipo ) ;
+	FILE *salida ;
+    char *nombre = malloc( sizeof( char ) * 20 ) ;
+    printf( "Ingrese el nombre del archivo donde guardar la lista %s (max 20 caracteres): " , tipo ) ;
     scanf( "%s" , nombre ) ;
-    salida = fopen( strcat( nombre , ".txt" ) , "w" ) ;
-    GList i = lista ;
-    for(; i->sig != NULL ; i = i->sig ) {
-		persona_a_archivo( i->dato , salida );
+    if( (salida = fopen(strcat(nombre , ".txt") , "w")) ) {
+		for (GNodo *nodo = lista; nodo != NULL; nodo = nodo->sig) {
+			persona_a_archivo(nodo->dato , salida);
+		}
 	}
-	persona_a_archivo( i->dato , salida );
+	free(nombre);
 }
 
 int glist_len( GList lista ) {
@@ -139,26 +171,20 @@ int glist_len( GList lista ) {
 }
 
 GList filter( GList lista , Predicado p , Copia c ) {
-	GList filtrada = glist_crear() , i = lista ;
-	for( ; i->sig != NULL ; i = i->sig ) {
-		if( p( i->dato ) ) {
-			c( i->dato ) ;
+	GList filtrada = glist_crear();
+	for (GNodo *nodo = lista; nodo != NULL; nodo = nodo->sig) {
+		if( (p(nodo->dato)) ) {
+			filtrada = glist_agregar_inicio( filtrada , c((void *) nodo->dato));
 		}
 	}
-    if( p(i->dato) ) {
-        c( i->dato ) ;
-    }
     return  filtrada ;
 }
 
 GList map( GList lista, Funcion f , Copia c ) {
-    GList nueva = glist_crear() , i = lista ;
-    for(; i->sig != NULL ; i = i->sig ){
-		f( (void *) i->dato );
-        c( (void *) i->dato ) ;
+    GList nueva = glist_crear();
+    for (GNodo *nodo = lista; nodo != NULL; nodo = nodo->sig){
+        nueva = glist_agregar_inicio(nueva , f( c((void *) nodo->dato)) );
     }
-    f( i->dato );
-    c( i->dato ) ;
     return nueva ;
 }
 
@@ -167,43 +193,57 @@ int menor( void * persona ) {
 }
 
 int inicial_A( void * persona ) {
-	return ((Persona *) persona)->nombre[0] = 'A';
+	return ((Persona *) persona)->nombre[0] == 'A';
 }
 
-void * doble( void * persona ) {
+void * doble_edad( void * persona ) {
 	Persona * aux = (Persona *) persona;
 	int i = aux->edad;
 	aux->edad = i * 2;
 	return aux;
 }
 
+void * mitad_edad( void * persona ) {
+	Persona * aux = (Persona *) persona;
+	int i = aux->edad;
+	aux->edad = i / 2;
+	return aux;
+} 
+
 int main() {
 	FILE* archivo;
-	char* nombre = "";
+	char* nombre = malloc( sizeof( char ) * 20 );
 
-	printf( "Ingrese el nombre del archivo que contiene la lista de personas: " );
+	printf( "Ingrese el nombre del archivo que contiene la lista de personas (max 20 caracteres): " );
 	scanf( "%s" , nombre );
-	printf( "Nombre: %s" , nombre );
 
 	if( (archivo = fopen( strcat( nombre , ".txt" )  ,  "r"  )) ) {
-		//int lineas = contarLineas( archivo );
 		GList listaP = glist_crear() , filtrada1 = glist_crear() , filtrada2 = glist_crear() , map1 = glist_crear() , map2 = glist_crear();
-
-		archivo_a_glist( listaP , archivo ) ;
-
+		
+		listaP = archivo_a_glist( listaP , archivo ) ;
+		//glist_imprimir(listaP);
+		
 		filtrada1 = filter( listaP , menor , copiar );
+		//printf("filtrada1:\n");
+		//glist_imprimir(filtrada1);
 		glist_a_archivo( filtrada1 , "filtrada 1" );
 		destruir( filtrada1 );
 
 		filtrada2 = filter( listaP , inicial_A , copiar );
+		//printf("filtrada2:\n");
+		//glist_imprimir(filtrada2);
 		glist_a_archivo( filtrada2 , "filtrada 2" );
 		destruir( filtrada2 );
 
-		map1 = map( listaP , doble , copiar );
+		map1 = map( listaP , doble_edad , copiar );
+		//printf("map1:\n");
+		//glist_imprimir(map1);
 		glist_a_archivo( map1 , "map 1" );
 		destruir( map1 );
 
-		map2 = map( listaP , doble , copiar );
+		map2 = map( listaP , mitad_edad , copiar );
+		//printf("map2:\n");
+		//glist_imprimir(map2);
 		glist_a_archivo( map2 , "map 2" );
 		destruir( map2 );
 
@@ -212,5 +252,6 @@ int main() {
 	else{
 		printf( "Error: el archivo no existe.\n" );
 	}
+	free(nombre);
 	return 0;
 }
