@@ -4,6 +4,11 @@
 #include <string.h>
 #include <assert.h>
 
+//Parte 1: Creacion de la lista de personas
+//Se crea una lista de entre 2000 y 10000 personas (estructuras formadas por nombre, edad y lugar de nacimiento)
+//de edad entre 1 y 100 y nombre y lugar de nacimiento elegidos al azar de los archivos nombre.txt y paises.txt
+//Luego se guarda esta lista en un nuevo archivo
+
 typedef struct {
 char *nombre;
 int edad;
